@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "445350276714",
+    "project_id": "busana-prima-app",
+    "storage_bucket": "busana-prima-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:445350276714:android:0f3019515f119ed246a413",
+        "android_client_info": {
+          "package_name": "com.busanaprima.busana_prima"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "445350276714-erlr6mtp071slf4ck0q66l72td1qb837.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.busanaprima.busana_prima",
+            "certificate_hash": "16dc376a6669f1cf607019928a502bbd1971bf21"
+          }
+        },
+        {
+          "client_id": "445350276714-605qkj0n8a5ps0ici5defhttmclhsvcu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDz7oPhl0NJ8kgOomeIAw_YR5zID8cwBGc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "445350276714-605qkj0n8a5ps0ici5defhttmclhsvcu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
