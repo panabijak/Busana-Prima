@@ -44,13 +44,18 @@ class Measurement {
 
   /// Physiological ranges in cm for validation
   static const Map<String, (double, double)> _physiologicalRanges = {
-    'bahu': (20.0, 70.0),
-    'dada': (50.0, 180.0),
-    'pinggang': (40.0, 200.0),
-    'pinggul': (50.0, 180.0),
-    'lingkar_leher': (20.0, 60.0),
-    'panjang_lengan': (30.0, 100.0),
-    'panjang_kaki': (50.0, 130.0),
+    'bahu': (20.0, 60.0),
+    'dada': (40.0, 150.0),
+    'pinggang': (35.0, 150.0),
+    'pinggul': (40.0, 170.0),
+    'lingkar_leher': (18.0, 55.0),
+    'panjang_lengan': (20.0, 95.0),
+    'panjang_kaki': (30.0, 125.0),
+    'tinggi_torso': (20.0, 70.0),
+    'panjang_punggung': (20.0, 65.0),
+    'lebar_dada': (15.0, 60.0),
+    'lebar_pinggang': (14.0, 60.0),
+    'lebar_pinggul': (16.0, 65.0),
   };
 }
 
@@ -63,11 +68,11 @@ enum MeasurementRegion {
   String get displayName {
     switch (this) {
       case MeasurementRegion.atas:
-        return 'Atas (Upper)';
+        return 'Upper';
       case MeasurementRegion.tengah:
-        return 'Tengah (Middle)';
+        return 'Middle';
       case MeasurementRegion.bawah:
-        return 'Bawah (Lower)';
+        return 'Lower';
     }
   }
 

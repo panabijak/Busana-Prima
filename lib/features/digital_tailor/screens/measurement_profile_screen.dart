@@ -23,7 +23,7 @@ class MeasurementProfileScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Pengukuran Tubuh'),
+        title: const Text('Body Measurements'),
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -66,13 +66,13 @@ class MeasurementProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'Belum Ada Data Pengukuran',
+              'No Measurement Data',
               style: AppTextStyles.heading3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Gunakan fitur Digital Scanning untuk mengukur tubuh Anda secara otomatis menggunakan kamera.',
+              'Use the Digital Scanning feature to automatically measure your body using the camera.',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -80,7 +80,7 @@ class MeasurementProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xxxl),
             AppButton(
-              label: 'Mulai Scanning Digital',
+              label: 'Start Digital Scan',
               onPressed: () => context.push('/digital-tailor/calibration'),
               isFullWidth: false,
             ),
@@ -151,7 +151,7 @@ class MeasurementProfileScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: AppButton(
-                        label: 'Scan Ulang',
+                        label: 'Re-scan',
                         variant: AppButtonVariant.outline,
                         size: AppButtonSize.small,
                         onPressed: () => _showRescanDialog(context),
@@ -226,10 +226,10 @@ class MeasurementProfileScreen extends ConsumerWidget {
 
   Widget _buildConfidenceBadge(double score) {
     final label = score >= 0.8
-        ? 'Tinggi'
+        ? 'High'
         : score >= 0.6
-        ? 'Sedang'
-        : 'Rendah';
+        ? 'Medium'
+        : 'Low';
     final color = score >= 0.8
         ? Colors.green
         : score >= 0.6
@@ -267,13 +267,13 @@ class MeasurementProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Gagal memuat data pengukuran',
+              'Failed to load measurement data',
               style: AppTextStyles.heading3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(
-              label: 'Coba Lagi',
+              label: 'Try Again',
               size: AppButtonSize.small,
               isFullWidth: false,
               onPressed: () => ref.invalidate(userProfileStreamProvider),
@@ -285,7 +285,7 @@ class MeasurementProfileScreen extends ConsumerWidget {
   }
 
   String _formatDate(dynamic timestamp) {
-    if (timestamp == null) return 'Tanggal tidak tersedia';
+    if (timestamp == null) return 'Date not available';
     try {
       DateTime date;
       if (timestamp is DateTime) {
@@ -296,7 +296,7 @@ class MeasurementProfileScreen extends ConsumerWidget {
       }
       return DateFormat('dd MMM yyyy, HH:mm').format(date);
     } catch (_) {
-      return 'Tanggal tidak tersedia';
+      return 'Date not available';
     }
   }
 
@@ -304,21 +304,21 @@ class MeasurementProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Scan Ulang?'),
+        title: const Text('Rescan?'),
         content: const Text(
-          'Data pengukuran sebelumnya akan ditimpa dengan hasil scan baru. Lanjutkan?',
+          'Your previous measurements will be overwritten with the new scan results. Continue?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.push('/digital-tailor/calibration');
             },
-            child: const Text('Lanjutkan'),
+            child: const Text('Continue'),
           ),
         ],
       ),

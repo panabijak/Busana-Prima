@@ -29,18 +29,18 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
   void _onProceed() {
     final text = _heightController.text.trim();
     if (text.isEmpty) {
-      setState(() => _errorText = 'Masukkan tinggi badan Anda');
+      setState(() => _errorText = 'Please enter your height');
       return;
     }
 
     final height = int.tryParse(text);
     if (height == null) {
-      setState(() => _errorText = 'Masukkan angka yang valid');
+      setState(() => _errorText = 'Please enter a valid number');
       return;
     }
 
     if (height < 100 || height > 250) {
-      setState(() => _errorText = 'Tinggi harus antara 100 cm - 250 cm');
+      setState(() => _errorText = 'Height must be between 100 cm and 250 cm');
       return;
     }
 
@@ -92,7 +92,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                 // Title
                 Center(
                   child: Text(
-                    'Kalibrasi Tinggi Badan',
+                    'Height Calibration',
                     style: AppTextStyles.heading3,
                     textAlign: TextAlign.center,
                   ),
@@ -102,7 +102,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
                 Center(
                   child: Text(
-                    'Masukkan tinggi badan Anda untuk akurasi pengukuran yang optimal.',
+                    'Enter your height for optimal measurement accuracy.',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -113,12 +113,12 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                 const SizedBox(height: AppSpacing.xxxl),
 
                 // Height input
-                Text('Tinggi Badan (cm)', style: AppTextStyles.labelMedium),
+                Text('Height (cm)', style: AppTextStyles.labelMedium),
                 const SizedBox(height: AppSpacing.sm),
 
                 AppTextField(
                   controller: _heightController,
-                  hint: 'Contoh: 165',
+                  hint: 'e.g. 165',
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
@@ -130,7 +130,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
                 const SizedBox(height: AppSpacing.sm),
 
                 Text(
-                  'Rentang yang diterima: 100 cm - 250 cm',
+                  'Accepted range: 100 cm – 250 cm',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: AppColors.textTertiary,
                   ),
@@ -140,7 +140,7 @@ class _CalibrationScreenState extends ConsumerState<CalibrationScreen> {
 
                 // Proceed button
                 AppButton(
-                  label: 'Lanjutkan',
+                  label: 'Continue',
                   onPressed: _onProceed,
                   isFullWidth: true,
                 ),

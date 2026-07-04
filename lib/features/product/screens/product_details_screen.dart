@@ -547,7 +547,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
             Expanded(
               flex: 1,
               child: InkWell(
-                onTap: () {},
+                onTap: () => _onTryOn(context, product),
                 child: Container(
                   padding: EdgeInsets.only(
                     top: 14,
@@ -602,6 +602,56 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                     ),
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Handle the "Try on" action.
+  ///
+  /// Virtual Try-On is only available for products that ship a transparent
+  /// garment PNG (`transparentUrl`). If unavailable, we surface a friendly
+  /// message and do NOT navigate.
+  void _onTryOn(BuildContext context, Product product) {
+    if (!product.supportsTryOn) {
+      _showTryOnUnavailable(context);
+      return;
+    }
+
+    context.push(
+      '/product/${product.id}/try-on',
+      extra: {
+        'productName': product.name,
+        'transparentUrl': product.transparentUrl,
+      },
+    );
+  }
+
+  void _showTryOnUnavailable(BuildContext context) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF702A70),
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Virtual Try-On is currently unavailable for this design.',
+                style: GoogleFonts.inter(color: Colors.white, fontSize: 13),
               ),
             ),
           ],

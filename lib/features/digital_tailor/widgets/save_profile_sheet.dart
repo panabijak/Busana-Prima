@@ -36,12 +36,12 @@ class _SaveProfileSheetState extends ConsumerState<SaveProfileSheet> {
     final name = _nameController.text.trim();
 
     if (name.isEmpty) {
-      setState(() => _errorText = 'Sila masukkan nama ukuran');
+      setState(() => _errorText = 'Please enter a profile name');
       return;
     }
 
     if (name.length > 30) {
-      setState(() => _errorText = 'Nama terlalu panjang (max 30 aksara)');
+      setState(() => _errorText = 'Name too long (max 30 characters)');
       return;
     }
 
@@ -92,7 +92,7 @@ class _SaveProfileSheetState extends ConsumerState<SaveProfileSheet> {
           const SizedBox(height: AppSpacing.xl),
 
           // Title
-          Text('Simpan Ukuran', style: AppTextStyles.heading3),
+          Text('Save Measurements', style: AppTextStyles.heading3),
 
           const SizedBox(height: AppSpacing.sm),
 
@@ -105,7 +105,7 @@ class _SaveProfileSheetState extends ConsumerState<SaveProfileSheet> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Saiz dikesan: $detectedSize',
+                'Detected size: $detectedSize',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -117,12 +117,12 @@ class _SaveProfileSheetState extends ConsumerState<SaveProfileSheet> {
           const SizedBox(height: AppSpacing.xl),
 
           // Profile name input
-          Text('Nama Ukuran', style: AppTextStyles.labelMedium),
+          Text('Profile Name', style: AppTextStyles.labelMedium),
           const SizedBox(height: AppSpacing.sm),
 
           AppTextField(
             controller: _nameController,
-            hint: 'Contoh: Ayah, Anak Lelaki, Baju Nikah',
+            hint: 'e.g. Dad, Child, Wedding Dress',
             errorText: _errorText ?? opState.errorMessage,
             maxLength: 30,
             autofocus: true,
@@ -146,7 +146,7 @@ class _SaveProfileSheetState extends ConsumerState<SaveProfileSheet> {
 
           // Save button
           AppButton(
-            label: opState.isLoading ? 'Menyimpan...' : 'Simpan',
+            label: opState.isLoading ? 'Saving...' : 'Save',
             onPressed: opState.isLoading ? null : _onSave,
             isLoading: opState.isLoading,
             isFullWidth: true,

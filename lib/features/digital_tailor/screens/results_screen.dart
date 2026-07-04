@@ -1,13 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../../../core/router/app_router.dart';
+import '../config/measurement_debug_flags.dart';
 import '../models/measurement.dart';
 import '../providers/digital_tailor_provider.dart';
 import '../providers/measurement_profile_provider.dart';
+import '../providers/smart_scan_provider.dart';
+import '../widgets/confidence_badge.dart';
+import '../widgets/measurement_debug_panel.dart';
 import '../widgets/save_profile_sheet.dart';
 
 /// Screen displaying calculated measurement results for review and saving.
@@ -61,7 +64,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           context.go(AppRoutes.measurements);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Profil ukuran berjaya disimpan!'),
+              content: Text('Measurement profile saved successfully!'),
               backgroundColor: Colors.green,
             ),
           );
@@ -77,8 +80,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
     if (result == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Hasil Pengukuran')),
-        body: const Center(child: Text('Tidak ada hasil tersedia.')),
+        appBar: AppBar(title: const Text('Measurement Results')),
+        body: const Center(child: Text('No results available.')),
       );
     }
 
@@ -91,37 +94,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           icon: const Icon(Icons.close, size: 20),
           onPressed: () => context.go(AppRoutes.profile),
         ),
-        title: const Text('Hasil Pengukuran'),
+        title: const Text('Measurement Results'),
         actions: [
-          // Confidence badge
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: _confidenceColor(
-                result.confidenceScore,
-              ).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.verified,
-                  size: 14,
-                  color: _confidenceColor(result.confidenceScore),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  result.confidenceLabel,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _confidenceColor(result.confidenceScore),
-                  ),
-                ),
-              ],
-            ),
+          // Confidence badge (V2: uses new widget)
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: ConfidenceBadge(confidence: result.confidenceScore),
           ),
         ],
       ),
@@ -138,7 +116,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                   builder: (context) {
                     final size = ref
                         .read(sizeDetectionServiceProvider)
-                        .detectSize(result.measurements);
+                        .detectSize(
+                          result.measurements,
+                          userHeightCm: state.session.userHeightCm,
+                        );
                     if (size == '-') return const SizedBox.shrink();
                     return Container(
                       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
@@ -162,7 +143,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            'Saiz Dikesan: ',
+                            'Detected Size: ',
                             style: AppTextStyles.bodyMedium,
                           ),
                           Text(
@@ -197,7 +178,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '${result.flaggedMeasurements.length} pengukuran di luar rentang normal',
+                            '${result.flaggedMeasurements.length} measurements outside normal range',
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.amber.shade900,
@@ -225,6 +206,17 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                     ),
                     ...grouped[region]!.map((m) => _buildMeasurementTile(m)),
                   ],
+
+                const SizedBox(height: AppSpacing.xl),
+
+                // ── Developer Debug Panel ─────────────────────────────
+                if (kMeasurementDebugEnabled)
+                  MeasurementDebugPanel(
+                    frontCalibration: state.frontCalibration,
+                    sideCalibration: state.sideCalibration,
+                    qualityReport: state.qualityReport,
+                    measurementDebug: state.measurementDebug,
+                  ),
 
                 const SizedBox(height: AppSpacing.xl),
               ],
@@ -267,7 +259,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       // Re-scan button
                       Expanded(
                         child: AppButton(
-                          label: 'Scan Ulang',
+                          label: 'Re-scan',
                           variant: AppButtonVariant.outline,
                           onPressed: state.isSaving
                               ? null
@@ -275,6 +267,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                   ref
                                       .read(digitalTailorProvider.notifier)
                                       .restartScan();
+                                  ref.read(smartScanProvider.notifier).reset();
                                   context.pushReplacement(
                                     '/digital-tailor/calibration',
                                   );
@@ -285,7 +278,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       // Save button
                       Expanded(
                         child: AppButton(
-                          label: state.isSaving ? 'Menyimpan...' : 'Simpan',
+                          label: state.isSaving ? 'Saving...' : 'Save',
                           onPressed: _hasViewedAll && !state.isSaving
                               ? _onSave
                               : null,
@@ -301,7 +294,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       padding: const EdgeInsets.only(top: 8),
                       child: TextButton(
                         onPressed: () => context.go(AppRoutes.profile),
-                        child: const Text('Kembali ke Profil'),
+                        child: const Text('Back to Profile'),
                       ),
                     ),
                 ],
@@ -316,6 +309,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   Widget _buildMeasurementTile(Measurement m) {
     final isOutOfRange = !m.isWithinRange;
 
+    // V2: Get per-measurement confidence from report if available
+    final confReport = ref.read(digitalTailorProvider).confidenceReport;
+    final perConf = confReport?.perMeasurement[m.key];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -327,6 +324,12 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       ),
       child: Row(
         children: [
+          // V2: Confidence dot
+          if (perConf != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ConfidenceDot(confidence: perConf),
+            ),
           if (isOutOfRange)
             Padding(
               padding: const EdgeInsets.only(right: 8),
@@ -357,11 +360,5 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         ],
       ),
     );
-  }
-
-  Color _confidenceColor(double score) {
-    if (score >= 0.8) return Colors.green;
-    if (score >= 0.6) return Colors.orange;
-    return Colors.red;
   }
 }

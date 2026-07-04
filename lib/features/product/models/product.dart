@@ -37,6 +37,11 @@ class Product {
   final double basePrice;
   final String imageUrl;
   final String? thumbnailUrl;
+
+  /// Transparent (cut-out) PNG of the garment used by the Virtual Try-On
+  /// feature. Only products that support Try-On populate this field; it is
+  /// `null` for every other product.
+  final String? transparentUrl;
   final String? description;
   final bool isActive;
   final bool isTopChoice;
@@ -52,6 +57,7 @@ class Product {
     required this.basePrice,
     this.category = 'All',
     this.thumbnailUrl,
+    this.transparentUrl,
     this.description,
     this.isActive = true,
     this.isTopChoice = false,
@@ -73,6 +79,11 @@ class Product {
       ),
       thumbnailUrl: _parseStringOrNull(
         data['thumbnailUrl'] ?? data['thumbnail_url'] ?? data['thumbnail'],
+      ),
+      transparentUrl: _parseStringOrNull(
+        data['transparentUrl'] ??
+            data['transparent_url'] ??
+            data['transparent'],
       ),
       basePrice:
           (data['price'] ?? data['basePrice'] ?? data['base_price'] as num?)
@@ -179,6 +190,7 @@ class Product {
       'price': basePrice,
       'imageUrl': imageUrl,
       'thumbnailUrl': thumbnailUrl,
+      'transparentUrl': transparentUrl,
       'description': description,
       'isActive': isActive,
       'isTopChoice': isTopChoice,
@@ -193,6 +205,11 @@ class Product {
 
   /// The display image — prefers thumbnail for grid cards, falls back to full image.
   String get displayImage => thumbnailUrl ?? imageUrl;
+
+  /// Whether this product supports the Virtual Try-On experience.
+  /// True only when a non-empty transparent garment PNG is available.
+  bool get supportsTryOn =>
+      transparentUrl != null && transparentUrl!.trim().isNotEmpty;
 
   /// Formatted base price with "From" prefix for catalog display.
   /// Final price is only determined during checkout.

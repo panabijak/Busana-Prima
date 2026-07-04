@@ -38,11 +38,11 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Profil Ukuran'),
+        title: const Text('Measurement Profiles'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            tooltip: 'Scan Baru',
+            tooltip: 'New Scan',
             onPressed: () => context.push('/digital-tailor/calibration'),
           ),
         ],
@@ -82,13 +82,13 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
             ),
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'Belum Ada Profil Ukuran',
+              'No Measurement Profiles',
               style: AppTextStyles.heading3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Scan tubuh untuk menyimpan profil ukuran.\nAnda boleh simpan untuk diri sendiri, keluarga, atau pelanggan.',
+              'Scan your body to save a measurement profile.\nYou can save profiles for yourself, family members, or customers.',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -96,7 +96,7 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
             ),
             const SizedBox(height: AppSpacing.xxxl),
             AppButton(
-              label: 'Mulai Scanning Digital',
+              label: 'Start Digital Scan',
               onPressed: () => context.push('/digital-tailor/calibration'),
               isFullWidth: false,
             ),
@@ -119,7 +119,7 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
           return Padding(
             padding: const EdgeInsets.only(top: AppSpacing.lg),
             child: AppButton(
-              label: 'Scan Ukuran Baru',
+              label: 'New Scan',
               variant: AppButtonVariant.outline,
               prefixIcon: Icons.add,
               onPressed: () => context.push('/digital-tailor/calibration'),
@@ -195,7 +195,7 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
               Text(
                 profile.summaryText.isNotEmpty
                     ? profile.summaryText
-                    : 'Tiada data ringkasan',
+                    : 'No summary data',
                 style: AppTextStyles.bodySmall,
               ),
 
@@ -245,7 +245,7 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Profil Aktif',
+                        'Active Profile',
                         style: TextStyle(
                           fontSize: 11,
                           color: AppColors.primary,
@@ -386,14 +386,14 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Padam Profil?'),
+        title: const Text('Delete Profile?'),
         content: Text(
-          'Profil "${profile.profileName}" akan dipadam secara kekal. Tindakan ini tidak boleh dibatalkan.',
+          'Profile "${profile.profileName}" will be permanently deleted. This cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
@@ -403,7 +403,7 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
                   .deleteProfile(profile.profileId);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Padam'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -424,13 +424,13 @@ class _ProfileListScreenState extends ConsumerState<ProfileListScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'Gagal memuat profil ukuran',
+              'Failed to load measurement profiles',
               style: AppTextStyles.heading3,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(
-              label: 'Cuba Lagi',
+              label: 'Try Again',
               size: AppButtonSize.small,
               isFullWidth: false,
               onPressed: () =>

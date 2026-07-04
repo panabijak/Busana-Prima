@@ -6,6 +6,7 @@ import '../../../core/theme/theme.dart';
 import '../../cart/widgets/cart_icon_button.dart';
 import '../../product/providers/product_provider.dart';
 import '../../product/models/product.dart';
+import '../widgets/digital_tailor_banner.dart';
 import '../widgets/greeting_header.dart';
 import '../widgets/promo_carousel.dart';
 import '../widgets/product_grid.dart';
@@ -129,6 +130,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ] else ...[
                 // ─── Promotional Carousel Banner ──────────────────────
                 const PromoCarousel(),
+
+                const SizedBox(height: 16),
+
+                // ─── Digital Tailor Quick Action Banner ───────────────
+                const DigitalTailorBanner(),
 
                 const SizedBox(height: 24),
 

@@ -10,6 +10,7 @@ import '../../features/auth/screens/registration_success_screen.dart';
 import '../../features/home/screens/main_shell_screen.dart';
 import '../../features/product/screens/product_details_screen.dart';
 import '../../features/product/screens/product_options_screen.dart';
+import '../../features/try_on/screens/try_on_screen.dart';
 import '../../features/cart/screens/shopping_cart_screen.dart';
 import '../../features/checkout/screens/checkout_dropoff_screen.dart';
 import '../../features/checkout/screens/checkout_shipping_screen.dart';
@@ -47,6 +48,7 @@ class AppRoutes {
   // Shopping
   static const String productDetails = '/product/:id';
   static const String productOptions = '/product/:id/options';
+  static const String tryOn = '/product/:id/try-on';
   static const String shoppingCart = '/cart';
 
   // Checkout
@@ -124,6 +126,17 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.productOptions,
       builder: (context, state) =>
           ProductOptionsScreen(productId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: AppRoutes.tryOn,
+      builder: (context, state) {
+        final args = state.extra as Map<String, dynamic>? ?? const {};
+        return TryOnScreen(
+          productId: state.pathParameters['id'] ?? '',
+          productName: (args['productName'] as String?) ?? 'Virtual Try-On',
+          transparentUrl: (args['transparentUrl'] as String?) ?? '',
+        );
+      },
     ),
     GoRoute(
       path: AppRoutes.shoppingCart,

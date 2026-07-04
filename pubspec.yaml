@@ -32,10 +32,13 @@ dependencies:
   # Camera & ML
   camera: ^0.11.0+2
   google_mlkit_pose_detection: ^0.12.0
+  google_mlkit_selfie_segmentation: ^0.7.0
   sensors_plus: ^6.1.1
   image: ^4.3.0
   path_provider: ^2.1.5
   permission_handler: ^12.0.1
+  vector_math: ^2.1.4
+  flutter_tts: ^4.2.3
   image_picker: ^1.1.2
   firebase_storage: ^12.4.0
   file_picker: ^10.1.2
