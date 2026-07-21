@@ -10,6 +10,9 @@ import '../../../core/widgets/app_image.dart';
 import '../models/order_model.dart';
 import '../providers/order_provider.dart';
 import '../services/order_service.dart';
+import '../utils/estimated_completion_utils.dart';
+import '../utils/order_display_utils.dart';
+import '../widgets/estimated_completion_label.dart';
 
 /// Order Status screen — fetches real order data and displays:
 /// - Per-outfit progress cards with status + progress bar
@@ -126,8 +129,7 @@ class OrderStatusScreen extends ConsumerWidget {
 
   Widget _buildOrderSummary(BuildContext context, BusanaOrder order) {
     final itemCount = order.items.length;
-    final etaDate = order.orderDate.add(const Duration(days: 14));
-    final etaFormatted = DateFormat('d MMM yyyy').format(etaDate);
+    final eta = resolveOrderEstimatedCompletion(order);
 
     return Container(
       color: Colors.white,
@@ -135,6 +137,34 @@ class OrderStatusScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: orderStatusColor(order.status).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: orderStatusColor(order.status).withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Text(
+                  order.displayStatusLabel,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: orderStatusColor(order.status),
+                  ),
+                ),
+              ),
+              if (order.deliveryStatus == DeliveryStatus.outForDelivery) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.local_shipping_outlined,
+                    size: 16, color: orderStatusColor(order.status)),
+              ],
+            ],
+          ),
+          const SizedBox(height: 14),
           // Title row: outfit count + tailor icon
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -151,9 +181,10 @@ class OrderStatusScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            'Estimated completion: $etaFormatted',
-            style: GoogleFonts.inter(
+          EstimatedCompletionLabel(
+            estimatedCompletionDate: eta.singleDate,
+            formattedRange: eta.hasDate ? eta.format() : null,
+            valueStyle: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w400,
               color: AppColors.textSecondary,
@@ -411,14 +442,9 @@ class OrderStatusScreen extends ConsumerWidget {
                       )
                     else
                       Expanded(
-                        child: Text(
-                          'ETA: ${_estimateEtaFromStatus(item.status)}',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textTertiary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                        child: EstimatedCompletionInline(
+                          estimatedCompletionDate:
+                              item.estimatedCompletionDate,
                         ),
                       ),
                   ],
@@ -486,6 +512,8 @@ class OrderStatusScreen extends ConsumerWidget {
     switch (status) {
       case ItemStatus.newOrder:
         return AppColors.statusPending;
+      case ItemStatus.accepted:
+        return AppColors.info;
       case ItemStatus.waitingFabric:
         return AppColors.info;
       case ItemStatus.cutting:
@@ -501,23 +529,6 @@ class OrderStatusScreen extends ConsumerWidget {
       case ItemStatus.delivered:
         return AppColors.statusCompleted;
     }
-  }
-
-  String _estimateEtaFromStatus(ItemStatus status) {
-    final daysLeft = switch (status) {
-      ItemStatus.newOrder => 14,
-      ItemStatus.waitingFabric => 12,
-      ItemStatus.cutting => 10,
-      ItemStatus.sewing => 7,
-      ItemStatus.fitting => 5,
-      ItemStatus.adjustment => 4,
-      ItemStatus.qc => 2,
-      ItemStatus.ready => 0,
-      ItemStatus.delivered => 0,
-    };
-    if (daysLeft == 0) return 'Completed';
-    final eta = DateTime.now().add(Duration(days: daysLeft));
-    return DateFormat('d MMM yyyy').format(eta);
   }
 
   // ─── Payment Section ────────────────────────────────────────────────────

@@ -1,0 +1,64 @@
+graph TD
+    subgraph ENTRY["Entry Point"]
+        MAIN["main.dart<br/>ProviderScope + MaterialApp.router"]
+        ROUTER["core/router<br/>app_router.dart (go_router)"]
+    end
+
+    subgraph VIEW["VIEW LAYER - screens/ + widgets/"]
+        VS["Screens<br/>(halaman penuh)"]
+        VW["Widgets<br/>(komponen UI boleh guna semula)"]
+        CW["core/widgets<br/>app_button, app_text_field"]
+    end
+
+    subgraph VM["VIEWMODEL LAYER - providers/ (Riverpod)"]
+        VMN["StateNotifier / Notifier<br/>(state + logik bisnes)"]
+        VMS["Stream/FutureProvider<br/>(data reaktif)"]
+        VMST["StateProvider<br/>(state ringkas)"]
+    end
+
+    subgraph MODEL["MODEL LAYER - models/"]
+        MOD["Objek data immutable<br/>(copyWith, fromJson/toJson)"]
+    end
+
+    subgraph SERVICE["SERVICE / REPOSITORY LAYER - services/"]
+        FSVC["Feature services<br/>ProductService, OrderService, dll"]
+        CSVC["core/services + core/session<br/>SessionManager, TokenService"]
+    end
+
+    subgraph BACKEND["EXTERNAL - Firebase & Device"]
+        FB["Firestore, Auth, Storage, Messaging"]
+        DEV["Kamera, ML Kit (Pose), Sensor"]
+    end
+
+    subgraph SHARED["CROSS-CUTTING - core/"]
+        THEME["core/theme (warna, teks, spacing)"]
+        UTILS["core/utils (validators, responsive)"]
+        CONST["core/constants"]
+    end
+
+    MAIN --> ROUTER
+    ROUTER --> VIEW
+    VS --> VW
+    VW --> CW
+
+    VIEW -->|"ref.watch (dengar state)<br/>ref.read (hantar aksi)"| VM
+    VM -->|"state / rebuild"| VIEW
+
+    VM --> SERVICE
+    SERVICE --> MODEL
+    MODEL --> VM
+
+    SERVICE --> BACKEND
+    BACKEND --> SERVICE
+
+    SHARED -.-> VIEW
+    SHARED -.-> VM
+    SHARED -.-> SERVICE
+
+    style ENTRY fill:#eceff1,stroke:#546e7a
+    style VIEW fill:#e3f2fd,stroke:#1976d2
+    style VM fill:#f3e5f5,stroke:#7b1fa2
+    style MODEL fill:#e8f5e9,stroke:#2e7d32
+    style SERVICE fill:#fff3e0,stroke:#ef6c00
+    style BACKEND fill:#fce4ec,stroke:#c2185b
+    style SHARED fill:#f9fbe7,stroke:#9e9d24

@@ -1,0 +1,36 @@
+graph LR
+    subgraph APP["Busana Prima App"]
+        direction TB
+        CORE["core/<br/>router, session, services<br/>theme, utils, constants, widgets"]
+
+        subgraph FEATURES["features/ - 10 modul, corak MVVM konsisten"]
+            direction TB
+            F1["auth"]
+            F2["home"]
+            F3["product"]
+            F4["cart"]
+            F5["checkout"]
+            F6["order"]
+            F7["profile"]
+            F8["chat"]
+            F9["digital_tailor"]
+            F10["try_on"]
+        end
+    end
+
+    CORE -.menyokong.-> FEATURES
+
+    subgraph PATTERN["Setiap ciri = 1 slice MVVM"]
+        direction TB
+        P1["screens/ + widgets/  ->  VIEW"]
+        P2["providers/  ->  VIEWMODEL"]
+        P3["models/  ->  MODEL"]
+        P4["services/  ->  REPOSITORY"]
+        P1 --> P2 --> P4 --> P3
+    end
+
+    FEATURES ==> PATTERN
+
+    style CORE fill:#f9fbe7,stroke:#9e9d24
+    style FEATURES fill:#e3f2fd,stroke:#1976d2
+    style PATTERN fill:#f3e5f5,stroke:#7b1fa2

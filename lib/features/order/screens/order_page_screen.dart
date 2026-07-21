@@ -9,6 +9,9 @@ import '../../../core/widgets/widgets.dart';
 import '../../../core/router/app_router.dart';
 import '../models/order_model.dart';
 import '../providers/order_provider.dart';
+import '../utils/estimated_completion_utils.dart';
+import '../utils/order_display_utils.dart';
+import '../widgets/estimated_completion_label.dart';
 
 /// Order page showing all user orders with tab filtering and search.
 ///
@@ -168,20 +171,13 @@ class _OrderPageScreenState extends ConsumerState<OrderPageScreen>
       controller: _tabController,
       children: [
         _buildOrderList(_filterOrders(orders, null)),
-        _buildOrderList(_filterOrders(orders, _inTailoringStatuses)),
-        _buildOrderList(_filterOrders(orders, [OrderStatus.ready])),
-        _buildOrderList(_filterOrders(orders, [OrderStatus.completed])),
-        _buildOrderList(_filterOrders(orders, [OrderStatus.cancelled])),
+        _buildOrderList(_filterOrders(orders, OrderTabFilters.inTailoring)),
+        _buildOrderList(_filterOrders(orders, OrderTabFilters.ready)),
+        _buildOrderList(_filterOrders(orders, OrderTabFilters.completed)),
+        _buildOrderList(_filterOrders(orders, OrderTabFilters.cancelled)),
       ],
     );
   }
-
-  /// Statuses that fall under "In Tailoring" tab
-  static const _inTailoringStatuses = [
-    OrderStatus.pending,
-    OrderStatus.confirmed,
-    OrderStatus.inProgress,
-  ];
 
   List<BusanaOrder> _filterOrders(
     List<BusanaOrder> orders,
@@ -249,7 +245,7 @@ class _OrderPageScreenState extends ConsumerState<OrderPageScreen>
                 'Order ID: #${order.orderNumber}',
                 style: AppTextStyles.labelMedium,
               ),
-              _buildStatusBadge(order.status),
+              _buildStatusBadge(order),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -339,21 +335,10 @@ class _OrderPageScreenState extends ConsumerState<OrderPageScreen>
 
   Widget _buildDateInfo(BusanaOrder order, String dateFormatted) {
     if (_isActiveStatus(order.status)) {
-      // Show ETA for active orders (estimate 7 days from order date)
-      final eta = order.orderDate.add(const Duration(days: 7));
-      final etaFormatted = DateFormat('d MMM yyyy').format(eta);
-      return Row(
-        children: [
-          Icon(Icons.schedule, size: 14, color: AppColors.statusInProgress),
-          const SizedBox(width: 4),
-          Text(
-            'ETA: $etaFormatted',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      final eta = resolveOrderEstimatedCompletion(order);
+      return EstimatedCompletionLabel(
+        estimatedCompletionDate: eta.singleDate,
+        formattedRange: eta.hasDate ? eta.format() : null,
       );
     } else if (order.status == OrderStatus.completed) {
       return Row(
@@ -404,6 +389,7 @@ class _OrderPageScreenState extends ConsumerState<OrderPageScreen>
         );
 
       case OrderStatus.ready:
+      case OrderStatus.outForDelivery:
         return SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -476,8 +462,8 @@ class _OrderPageScreenState extends ConsumerState<OrderPageScreen>
 
   // ─── Status Badge ───────────────────────────────────────────────────────
 
-  Widget _buildStatusBadge(OrderStatus status) {
-    final color = _statusColor(status);
+  Widget _buildStatusBadge(BusanaOrder order) {
+    final color = orderStatusColor(order.status);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -489,7 +475,7 @@ class _OrderPageScreenState extends ConsumerState<OrderPageScreen>
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
-        _statusLabel(status),
+        order.displayStatusLabel,
         style: AppTextStyles.labelSmall.copyWith(
           color: color,
           fontWeight: FontWeight.w600,
@@ -498,44 +484,10 @@ class _OrderPageScreenState extends ConsumerState<OrderPageScreen>
     );
   }
 
-  Color _statusColor(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.pending:
-        return AppColors.statusPending;
-      case OrderStatus.confirmed:
-        return AppColors.statusConfirmed;
-      case OrderStatus.inProgress:
-        return AppColors.statusInProgress;
-      case OrderStatus.ready:
-        return AppColors.statusReady;
-      case OrderStatus.completed:
-        return AppColors.statusCompleted;
-      case OrderStatus.cancelled:
-        return AppColors.statusCancelled;
-    }
-  }
-
-  String _statusLabel(OrderStatus status) {
-    switch (status) {
-      case OrderStatus.pending:
-        return 'Pending';
-      case OrderStatus.confirmed:
-        return 'Confirmed';
-      case OrderStatus.inProgress:
-        return 'In Tailoring';
-      case OrderStatus.ready:
-        return 'Ready';
-      case OrderStatus.completed:
-        return 'Delivered';
-      case OrderStatus.cancelled:
-        return 'Cancelled';
-    }
-  }
-
   bool _isActiveStatus(OrderStatus status) {
-    return status == OrderStatus.pending ||
-        status == OrderStatus.confirmed ||
-        status == OrderStatus.inProgress;
+    return OrderTabFilters.inTailoring.contains(status) ||
+        status == OrderStatus.ready ||
+        status == OrderStatus.outForDelivery;
   }
 
   // ─── Empty State ────────────────────────────────────────────────────────

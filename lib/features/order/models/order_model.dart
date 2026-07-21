@@ -1,43 +1,74 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+DateTime? parseEstimatedCompletionDate(Map<String, dynamic> map) {
+  final raw = map['estimatedCompletionDate'] ??
+      map['estimated_completion_date'] ??
+      map['estimatedCompletionAt'] ??
+      map['estimated_completion_at'];
+  if (raw == null) return null;
+  if (raw is Timestamp) return raw.toDate();
+  if (raw is DateTime) return raw;
+  if (raw is String) return DateTime.tryParse(raw);
+  return null;
+}
+
 /// Order status enum matching Firestore string values.
 enum OrderStatus {
   pending,
   confirmed,
   inProgress,
   ready,
+  outForDelivery,
   completed,
   cancelled;
 
   String get label {
     switch (this) {
       case OrderStatus.pending:
-        return 'Pending';
+        return 'Pending Acceptance';
       case OrderStatus.confirmed:
-        return 'Confirmed';
+        return 'Accepted';
       case OrderStatus.inProgress:
         return 'In Progress';
       case OrderStatus.ready:
-        return 'Ready';
+        return 'All Outfits Ready';
+      case OrderStatus.outForDelivery:
+        return 'Out for Delivery';
       case OrderStatus.completed:
-        return 'Completed';
+        return 'Delivered';
       case OrderStatus.cancelled:
         return 'Cancelled';
     }
   }
 
   static OrderStatus fromString(String? value) {
-    switch (value) {
+    if (value == null || value.isEmpty) return OrderStatus.pending;
+    final normalized = value.toLowerCase().replaceAll(' ', '_');
+
+    switch (normalized) {
+      case 'pending_acceptance':
+      case 'pending':
+      case 'new':
+      case 'new_order':
+        return OrderStatus.pending;
+      case 'accepted':
       case 'confirmed':
         return OrderStatus.confirmed;
       case 'in_progress':
         return OrderStatus.inProgress;
+      case 'all_outfits_ready':
+        return OrderStatus.ready;
+      case 'out_for_delivery':
+        return OrderStatus.outForDelivery;
       case 'ready':
         return OrderStatus.ready;
+      case 'delivered':
       case 'completed':
         return OrderStatus.completed;
+      case 'rejected':
       case 'cancelled':
+      case 'canceled':
         return OrderStatus.cancelled;
       default:
         return OrderStatus.pending;
@@ -53,7 +84,9 @@ enum OrderStatus {
       case OrderStatus.inProgress:
         return 'in_progress';
       case OrderStatus.ready:
-        return 'ready';
+        return 'all_outfits_ready';
+      case OrderStatus.outForDelivery:
+        return 'out_for_delivery';
       case OrderStatus.completed:
         return 'completed';
       case OrderStatus.cancelled:
@@ -195,9 +228,46 @@ enum PaymentMethod {
   }
 }
 
+/// Order-level delivery tracking from tailor app.
+enum DeliveryStatus {
+  none,
+  awaitingReady,
+  outForDelivery,
+  delivered;
+
+  String get label {
+    switch (this) {
+      case DeliveryStatus.none:
+        return 'Not started';
+      case DeliveryStatus.awaitingReady:
+        return 'Awaiting ready';
+      case DeliveryStatus.outForDelivery:
+        return 'Out for Delivery';
+      case DeliveryStatus.delivered:
+        return 'Delivered';
+    }
+  }
+
+  static DeliveryStatus fromString(String? value) {
+    if (value == null || value.isEmpty) return DeliveryStatus.none;
+    switch (value.toUpperCase()) {
+      case 'AWAITING_READY':
+      case 'PENDING':
+        return DeliveryStatus.awaitingReady;
+      case 'OUT_FOR_DELIVERY':
+        return DeliveryStatus.outForDelivery;
+      case 'DELIVERED':
+        return DeliveryStatus.delivered;
+      default:
+        return DeliveryStatus.none;
+    }
+  }
+}
+
 /// Per-item tailoring status for tracking individual garment progress.
 enum ItemStatus {
   newOrder,
+  accepted,
   waitingFabric,
   cutting,
   sewing,
@@ -211,8 +281,10 @@ enum ItemStatus {
     switch (this) {
       case ItemStatus.newOrder:
         return 'New';
+      case ItemStatus.accepted:
+        return 'Accepted';
       case ItemStatus.waitingFabric:
-        return 'Waiting Fabric';
+        return 'Fabric Received';
       case ItemStatus.cutting:
         return 'Cutting';
       case ItemStatus.sewing:
@@ -231,8 +303,14 @@ enum ItemStatus {
   }
 
   static ItemStatus fromString(String? value) {
-    switch (value?.toLowerCase()) {
+    if (value == null || value.isEmpty) return ItemStatus.newOrder;
+    final normalized = value.toLowerCase().replaceAll(' ', '_');
+
+    switch (normalized) {
+      case 'accepted':
+        return ItemStatus.newOrder;
       case 'waiting_fabric':
+      case 'fabric_received':
       case 'waiting fabric':
         return ItemStatus.waitingFabric;
       case 'cutting':
@@ -251,6 +329,7 @@ enum ItemStatus {
       case 'delivered':
         return ItemStatus.delivered;
       case 'new':
+      case 'new_order':
       case 'pending':
       default:
         return ItemStatus.newOrder;
@@ -261,8 +340,10 @@ enum ItemStatus {
     switch (this) {
       case ItemStatus.newOrder:
         return 'new';
+      case ItemStatus.accepted:
+        return 'accepted';
       case ItemStatus.waitingFabric:
-        return 'waiting_fabric';
+        return 'fabric_received';
       case ItemStatus.cutting:
         return 'cutting';
       case ItemStatus.sewing:
@@ -282,7 +363,9 @@ enum ItemStatus {
 
   /// Whether cancellation is allowed at this stage
   bool get isCancellable {
-    return this == ItemStatus.newOrder || this == ItemStatus.waitingFabric;
+    return this == ItemStatus.newOrder ||
+        this == ItemStatus.accepted ||
+        this == ItemStatus.waitingFabric;
   }
 }
 
@@ -298,6 +381,9 @@ class OrderItem {
   final int quantity;
   final double unitPrice;
   final ItemStatus status;
+  final int? progressPercentage;
+  final double? storedProgress;
+  final DateTime? estimatedCompletionAt;
   final bool fittingRequired;
   final bool alterationRequired;
   final String? skipReason;
@@ -314,6 +400,9 @@ class OrderItem {
     required this.quantity,
     required this.unitPrice,
     this.status = ItemStatus.newOrder,
+    this.progressPercentage,
+    this.storedProgress,
+    this.estimatedCompletionAt,
     this.fittingRequired = false,
     this.alterationRequired = false,
     this.skipReason,
@@ -322,6 +411,9 @@ class OrderItem {
 
   double get lineTotal => unitPrice * quantity;
 
+  /// Tailor-assigned ETA — Firestore `items[].estimatedCompletionDate`.
+  DateTime? get estimatedCompletionDate => estimatedCompletionAt;
+
   String get fabricLabel =>
       fabricType == 'tailor' ? "Tailor's Fabric" : 'Own Fabric';
 
@@ -329,6 +421,7 @@ class OrderItem {
   List<ItemStatus> get workflowSteps {
     final steps = <ItemStatus>[
       ItemStatus.newOrder,
+      ItemStatus.accepted,
       ItemStatus.waitingFabric,
       ItemStatus.cutting,
       ItemStatus.sewing,
@@ -339,8 +432,12 @@ class OrderItem {
     return steps;
   }
 
-  /// Progress value (0.0 to 1.0) based on current status and workflow.
+  /// Progress value (0.0 to 1.0). Prefers tailor-written progress when available.
   double get progress {
+    if (storedProgress != null) return storedProgress!.clamp(0.0, 1.0);
+    if (progressPercentage != null) {
+      return (progressPercentage!.clamp(0, 100)) / 100;
+    }
     final steps = workflowSteps;
     final currentIndex = steps.indexOf(status);
     if (currentIndex < 0) return 0.0;
@@ -348,7 +445,8 @@ class OrderItem {
   }
 
   /// Progress percentage as int (0–100).
-  int get progressPercent => (progress * 100).round();
+  int get progressPercent =>
+      progressPercentage ?? (progress * 100).round();
 
   Map<String, dynamic> toMap() => {
     'productId': productId,
@@ -361,6 +459,8 @@ class OrderItem {
     'quantity': quantity,
     'unitPrice': unitPrice,
     'status': status.toFirestore(),
+    if (estimatedCompletionAt != null)
+      'estimatedCompletionDate': Timestamp.fromDate(estimatedCompletionAt!),
     'fittingRequired': fittingRequired,
     'alterationRequired': alterationRequired,
     'skipReason': skipReason,
@@ -368,10 +468,11 @@ class OrderItem {
   };
 
   factory OrderItem.fromMap(Map<String, dynamic> map) {
-    final parsedStatus = ItemStatus.fromString(map['status']);
+    final rawStage = map['productionStage'] ?? map['status'];
+    final parsedStatus = ItemStatus.fromString(rawStage?.toString());
     debugPrint(
       '[OrderItem] Parsing: ${map['productName']} | '
-      'raw status="${map['status']}" → parsed=$parsedStatus',
+      'raw stage="$rawStage" → parsed=$parsedStatus',
     );
     return OrderItem(
       productId: map['productId'] ?? '',
@@ -384,6 +485,9 @@ class OrderItem {
       quantity: (map['quantity'] as num?)?.toInt() ?? 1,
       unitPrice: (map['unitPrice'] as num?)?.toDouble() ?? 0.0,
       status: parsedStatus,
+      progressPercentage: (map['progressPercentage'] as num?)?.toInt(),
+      storedProgress: (map['progress'] as num?)?.toDouble(),
+      estimatedCompletionAt: parseEstimatedCompletionDate(map),
       fittingRequired: map['fittingRequired'] ?? false,
       alterationRequired: map['alterationRequired'] ?? false,
       skipReason: map['skipReason'],
@@ -458,8 +562,10 @@ class BusanaOrder {
   final double fabricTotal;
   final double totalAmount;
   final OrderStatus status;
+  final DeliveryStatus deliveryStatus;
   final DateTime orderDate;
   final String orderNumber;
+  final DateTime? estimatedCompletionAt;
 
   const BusanaOrder({
     required this.id,
@@ -477,9 +583,27 @@ class BusanaOrder {
     required this.fabricTotal,
     required this.totalAmount,
     required this.status,
+    this.deliveryStatus = DeliveryStatus.none,
     required this.orderDate,
     required this.orderNumber,
+    this.estimatedCompletionAt,
   });
+
+  /// Order-level ETA set when tailor accepts the order.
+  DateTime? get estimatedCompletionDate => estimatedCompletionAt;
+
+  /// Customer-facing order status — deliveryStatus overrides when active.
+  String get displayStatusLabel {
+    switch (deliveryStatus) {
+      case DeliveryStatus.outForDelivery:
+        return 'Out for Delivery';
+      case DeliveryStatus.delivered:
+        return 'Delivered';
+      case DeliveryStatus.awaitingReady:
+      case DeliveryStatus.none:
+        return status.label;
+    }
+  }
 
   Map<String, dynamic> toMap() => {
     'customerId': customerId,
@@ -500,6 +624,8 @@ class BusanaOrder {
     'status': status.toFirestore(),
     'orderDate': Timestamp.fromDate(orderDate),
     'orderNumber': orderNumber,
+    if (estimatedCompletionAt != null)
+      'estimatedCompletionDate': Timestamp.fromDate(estimatedCompletionAt!),
   };
 
   factory BusanaOrder.fromFirestore(DocumentSnapshot doc) {
@@ -527,9 +653,15 @@ class BusanaOrder {
       tailorFeeTotal: (data['tailorFeeTotal'] as num?)?.toDouble() ?? 0.0,
       fabricTotal: (data['fabricTotal'] as num?)?.toDouble() ?? 0.0,
       totalAmount: (data['totalAmount'] as num?)?.toDouble() ?? 0.0,
-      status: OrderStatus.fromString(data['status']),
+      status: OrderStatus.fromString(
+        data['orderStatus'] ?? data['status'],
+      ),
+      deliveryStatus: DeliveryStatus.fromString(
+        data['deliveryStatus'] as String?,
+      ),
       orderDate: (data['orderDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       orderNumber: data['orderNumber'] ?? '',
+      estimatedCompletionAt: parseEstimatedCompletionDate(data),
     );
   }
 }

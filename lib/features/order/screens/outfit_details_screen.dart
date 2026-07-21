@@ -9,6 +9,7 @@ import '../../../core/theme/theme.dart';
 import '../../../core/widgets/app_image.dart';
 import '../models/order_model.dart';
 import '../providers/order_provider.dart';
+import '../widgets/estimated_completion_label.dart';
 
 /// Outfit Details screen — shows a single outfit's full details:
 /// - Header card: product image, name, ID, status badge, ETA, progress bar
@@ -123,8 +124,6 @@ class OutfitDetailsScreen extends ConsumerWidget {
     final statusLabel = item.status.label;
     final statusColor = _itemStatusColor(item.status);
     final progress = item.progress;
-    final etaDate = order.orderDate.add(const Duration(days: 14));
-    final etaFormatted = DateFormat('d MMM yyyy').format(etaDate);
 
     return Container(
       color: Colors.white,
@@ -186,45 +185,42 @@ class OutfitDetailsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 10),
 
-                    // Status badge + ETA
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: statusColor.withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Text(
-                            statusLabel,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: statusColor,
-                            ),
-                          ),
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.4),
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'ETA: $etaFormatted',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textTertiary,
-                          ),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
+          ),
+
+          const SizedBox(height: 12),
+          EstimatedCompletionLabel(
+            estimatedCompletionDate: item.estimatedCompletionDate,
+            valueStyle: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondary,
+            ),
           ),
 
           const SizedBox(height: 14),
@@ -344,7 +340,9 @@ class OutfitDetailsScreen extends ConsumerWidget {
   String _stepTitle(ItemStatus status) {
     switch (status) {
       case ItemStatus.newOrder:
-        return 'Order Confirmed';
+        return 'Order Placed';
+      case ItemStatus.accepted:
+        return 'Order Accepted';
       case ItemStatus.waitingFabric:
         return 'Fabric Received';
       case ItemStatus.cutting:
@@ -643,6 +641,8 @@ class OutfitDetailsScreen extends ConsumerWidget {
     switch (status) {
       case ItemStatus.newOrder:
         return AppColors.statusPending;
+      case ItemStatus.accepted:
+        return AppColors.info;
       case ItemStatus.waitingFabric:
         return AppColors.info;
       case ItemStatus.cutting:
@@ -732,7 +732,6 @@ class OutfitDetailsScreen extends ConsumerWidget {
     );
   }
 }
-
 /// Internal timeline step model.
 class _ProgressStep {
   final String title;
@@ -747,3 +746,4 @@ class _ProgressStep {
     required this.isCurrent,
   });
 }
+

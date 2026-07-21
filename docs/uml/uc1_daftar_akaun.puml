@@ -1,0 +1,76 @@
+@startuml UC1_Daftar_Akaun
+title Rajah Jujukan - UC1: Daftar Akaun (Busana Prima)
+
+skinparam sequenceMessageAlign center
+skinparam ParticipantPadding 15
+skinparam BoxPadding 10
+
+actor Pelanggan
+
+box "Lapisan Presentation" #E8F4FD
+    participant "UI\n(RegisterScreen)" as UI
+end box
+
+box "Lapisan Logik (MVVM)" #FDF2E8
+    participant "ViewModel\n(AuthNotifier)" as VM
+    participant "Service\n(AuthService)" as SVC
+end box
+
+box "Lapisan Data (Firebase)" #E8FDEC
+    participant "Authentication\n(Firebase Auth)" as AUTH
+    database "Firestore" as DB
+end box
+
+Pelanggan -> UI : pilihDaftarAkaun()
+activate UI
+Pelanggan -> UI : isiMaklumatPendaftaran()
+UI -> UI : sahkanInput()
+
+UI -> VM : daftarAkaun(emel, kataLaluan, nama)
+activate VM
+
+VM -> SVC : daftarAkaun(emel, kataLaluan, nama)
+activate SVC
+
+SVC -> AUTH : ciptaAkaunPengguna(emel, kataLaluan)
+activate AUTH
+
+alt Pendaftaran Berjaya (e-mel sah & belum digunakan)
+    AUTH --> SVC : akaunBerjaya(pengguna)
+
+    SVC -> AUTH : kemasKiniNamaPapar(nama)
+    SVC -> AUTH : hantarPengesahanEmel()
+    deactivate AUTH
+
+    SVC -> DB : simpanProfilPengguna(users/{uid})
+    activate DB
+    DB --> SVC : profilTersimpan()
+    deactivate DB
+
+    SVC --> VM : hasilBerjaya(pengguna)
+    deactivate SVC
+
+    VM --> UI : berjaya(benar)
+    deactivate VM
+
+    UI -> Pelanggan : paparkanPendaftaranBerjaya()
+
+else E-mel Telah Digunakan
+    activate AUTH
+    AUTH --> SVC : ralat(email-already-in-use)
+    deactivate AUTH
+
+    SVC -> SVC : petakanRalat()
+    SVC --> VM : hasilGagal(mesejRalat)
+    activate SVC
+    deactivate SVC
+
+    activate VM
+    VM --> UI : berjaya(palsu, mesejRalat)
+    deactivate VM
+
+    UI -> Pelanggan : paparkanMesejRalat()
+end
+
+deactivate UI
+@enduml

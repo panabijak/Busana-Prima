@@ -134,19 +134,10 @@ class GarmentOverlayService {
     if (shoulderWidthPx <= 1) return null;
     final torsoHeightPx = (hipMid - shoulderMid).distance;
 
-    // ── Dynamic scaling from shoulder width, aspect-locked ───────────────
-    // Width follows the body; height is derived from the source aspect ratio
-    // so the garment is NEVER stretched independently. Because a real garment
-    // cut-out already spans shoulders → hip, this naturally covers the torso
-    // once the width is correct.
+
     double garmentWidth = shoulderWidthPx / garmentShoulderWidthRatio;
     double garmentHeight = garmentWidth / garmentAspect;
 
-    // ── Torso coverage floor (uniform scale) ─────────────────────────────
-    // If the aspect-derived garment is far shorter than the torso, grow BOTH
-    // dimensions by the same factor. Scaling uniformly (a) preserves the
-    // aspect ratio and (b) keeps the garment centred on the shoulder midpoint,
-    // so scaling never shifts the overlay sideways or downward on its own.
     if (torsoHeightPx > 0) {
       final minHeight = torsoHeightPx * _minTorsoCoverage;
       if (garmentHeight < minHeight) {
